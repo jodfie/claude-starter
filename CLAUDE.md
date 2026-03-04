@@ -63,150 +63,98 @@ All MCP servers must be configured in `~/.claude.json` (user-level) to prevent c
 
 Run `/mcp` in Claude Code to verify all four servers are connected.
 
-## Secret Management with Infisical
+## Secret Management with Phase
 
-This starter template supports integration with Infisical CLI for automated secret management. Infisical CLI is a **host-system tool** that should be installed globally on the developer's machine, not per-repository.
+This starter template uses **Phase CLI** for centralized secret management against a self-hosted Phase instance. Phase CLI is a **host-system tool** installed globally on the developer's machine, not per-repository.
+
+### Instance
+
+| Field    | Value                           |
+|----------|---------------------------------|
+| Host     | `https://secrets.redleif.dev`   |
+| Org      | Phi Security Inc.               |
+| Auth     | Service token (`~/.phase/config.json`) |
+
+> **Always pass `--host https://secrets.redleif.dev`** in every Phase command. This is a self-hosted instance — omitting `--host` will fail or hit the wrong endpoint.
 
 ### Prerequisites
 
-Developers need:
-1. **Infisical CLI installed** at `~/.local/bin/infisical-cli` (wrapper) and `~/.local/bin/infisical` (official binary)
-2. **Credentials file** at `~/.infisical-machine-identity` with:
-   - `INFISICAL_API_URL` - Self-hosted instance URL
-   - `INFISICAL_CLIENT_ID` - Machine identity client ID
-   - `INFISICAL_CLIENT_SECRET` - Machine identity secret
-   - `INFISICAL_PROJECT_ID` - Project ID for this repository
-   - `INFISICAL_ENVIRONMENT` - Target environment (dev/staging/prod)
-   - `INFISICAL_SECRET_PATH` - Path within the project (default: `/`)
+1. **Phase CLI installed**: `pip install phase-cli` or via the install script
+2. **Credentials** stored at `~/.phase/config.json` (set up via `phase auth --mode token`)
+3. **Project linked** via `phase init` (creates `.phase.json` in project root)
 
-### Available Tools
+### Core Workflows
 
-**infisical-helper** (Quick retrieval in scripts):
+**Run application with secrets injected (preferred)**:
 ```bash
-# Get a single secret value
-SECRET=$(infisical-helper get SECRET_NAME)
+# Secrets are injected into subprocess only — never touch shell history
+phase run --host https://secrets.redleif.dev --app <app-name> --env production -- npm start
+phase run --host https://secrets.redleif.dev --app <app-name> --env production -- python manage.py runserver
+phase run --host https://secrets.redleif.dev --app <app-name> --env production -- go run main.go
+
+# If .phase.json is present in project root, --app and --env can be omitted:
+phase run --host https://secrets.redleif.dev -- npm run dev
 ```
 
-**infisical-cli** (Full-featured for development):
+**List and retrieve secrets**:
 ```bash
-# Run application with ALL secrets injected as environment variables
-infisical-cli run -- npm run dev
-infisical-cli run -- python app.py
-infisical-cli run -- go run main.go
+# List all secrets (values censored)
+phase secrets list --host https://secrets.redleif.dev --app <app-name> --env production
 
-# Export secrets to .env file (for local development only)
-infisical-cli export --format=dotenv > .env.local
+# Get a specific secret (JSON output)
+phase secrets get DATABASE_URL --host https://secrets.redleif.dev --app <app-name> --env production
 
-# List all available secrets
-infisical-cli secrets
-
-# Get specific secret
-infisical-cli secrets get SECRET_NAME
-
-# Security scan for leaked secrets
-infisical-cli scan
+# Export as dotenv
+phase secrets export --host https://secrets.redleif.dev --app <app-name> --env production --format dotenv
 ```
 
-### Claude Code Integration Patterns
-
-When working with projects that require secrets:
-
-**1. Development Workflow**
+**Create and update secrets**:
 ```bash
-# Instead of manual .env files, use infisical-cli run
-infisical-cli run -- npm start
-infisical-cli run -- npm run dev
-infisical-cli run -- npm test
+# Create (prompts for value)
+phase secrets create API_KEY --host https://secrets.redleif.dev --app <app-name> --env production
 
-# For Python projects
-infisical-cli run -- python manage.py runserver
-infisical-cli run -- uvicorn app:app --reload
+# Create with generated random value
+phase secrets create SESSION_SECRET --host https://secrets.redleif.dev --app <app-name> --env production --random hex --length 32
 
-# For Go projects
-infisical-cli run -- go run main.go
+# Pipe from stdin (for multiline values like SSH keys)
+cat ~/.ssh/id_rsa | phase secrets create SSH_KEY --host https://secrets.redleif.dev --app <app-name> --env production
+
+# Update existing secret
+phase secrets update API_KEY --host https://secrets.redleif.dev --app <app-name> --env production
 ```
 
-**2. CI/CD Integration**
+**Import existing `.env` files**:
 ```bash
-# Export secrets in CI pipeline
-infisical-cli export --format=dotenv > .env
-source .env
+phase secrets import .env --host https://secrets.redleif.dev --app <app-name> --env production
 ```
 
-**3. Security Scanning**
+### Security Rules
+
+1. **Never commit secrets** — use `.gitignore` for `.env`, `.env.local`, `*credentials*.json`
+2. **Use `phase run`** instead of exporting secrets to the shell manually
+3. **Never echo/print secret values** in output, logs, or commits
+4. **Commit `.phase.json`** (links project to app — contains no credentials)
+5. **Never commit `~/.phase/config.json`** — it holds your service token
+
+### Project Setup (New Projects)
+
 ```bash
-# Scan for leaked secrets before commits
-infisical-cli scan
-infisical-cli scan --path=./src
+# 1. Link project to a Phase app
+phase init --host https://secrets.redleif.dev
+# (interactive: select app + default environment)
+
+# 2. Verify connection
+phase secrets list --host https://secrets.redleif.dev --env production
+
+# 3. Run your app
+phase run --host https://secrets.redleif.dev -- <your-start-command>
 ```
-
-### When to Use Which Tool
-
-**Use `infisical-helper`** when:
-- Writing shell scripts that need a single secret
-- Quick one-off secret retrieval
-- Minimal overhead is critical
-
-**Use `infisical-cli`** when:
-- Running applications that need multiple secrets
-- Exporting secrets to files
-- Performing security scans
-- Working with complex development workflows
-
-### Security Best Practices
-
-1. **Never commit secrets** - Always use `.gitignore` patterns for:
-   - `.env`
-   - `.env.local`
-   - `.env.*.local`
-   - `*credentials*.json`
-   - Any files containing actual secret values
-
-2. **Use `.env.example`** - Commit example files with placeholder values:
-   ```
-   # .env.example
-   DATABASE_URL=postgresql://user:pass@localhost:5432/dbname
-   API_KEY=your_api_key_here
-   ```
-
-3. **Scan before commits** - Set up pre-commit hooks:
-   ```bash
-   infisical-cli scan
-   ```
-
-4. **Document secret requirements** - In README.md, list which secrets are needed:
-   ```markdown
-   ## Required Secrets
-   - `DATABASE_URL` - PostgreSQL connection string
-   - `API_KEY` - External API authentication key
-   ```
-
-5. **Use environment-specific secrets** - Configure different Infisical environments:
-   - `dev` - Local development
-   - `staging` - Staging environment
-   - `prod` - Production (separate credentials!)
-
-### Architecture Decisions
-
-**Why Infisical CLI?**
-- **Automated retrieval**: No manual copy-paste of secrets
-- **Fresh tokens**: Auto-refreshed authentication per command
-- **Security**: No long-lived tokens in environment
-- **Auditability**: Centralized secret access logging
-- **Team consistency**: All developers use same secret source
-
-**Why wrapper script?**
-- **Zero configuration**: Automatically sources credentials from `~/.infisical-machine-identity`
-- **Security isolation**: Temporary tokens, no global environment pollution
-- **Convenience**: No manual authentication needed
-- **Compatibility**: Works alongside existing `infisical-helper` tool
 
 ### Documentation References
 
-For detailed Infisical setup and usage:
-- **TechKB**: Check host system for `TechKB/40-services/infisical/` documentation
-- **Quick reference**: `TechKB/80-reference/quick-ref/Infisical-Commands.md`
-- **Official docs**: https://infisical.com/docs/cli/overview
+- **Phase skill**: `.claude/skills/phase-secrets/SKILL.md` (full command reference)
+- **Integration guide**: `docs/phase-integration.md`
+- **Official docs**: https://docs.phase.dev/cli/commands
 
 ## Getting Started Workflow
 

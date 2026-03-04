@@ -24,7 +24,7 @@ logs
 !.claude
 !.taskmaster
 
-# Secret Management (Infisical)
+# Secret Management (Phase)
 # Environment files with actual secrets
 .env
 .env.local
@@ -43,8 +43,12 @@ logs
 *secret*.yaml
 *secret*.yml
 
-# Infisical cache/config (if generated locally)
-.infisical.json
+# Phase credentials (user-level service token — never commit)
+.phase/config.json
+
+# .phase.json (project-app link) IS safe to commit — no credentials inside
+# Uncomment below only if you want to keep it local:
+# .phase.json
 
 # API keys and tokens
 *.key
