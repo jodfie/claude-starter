@@ -30,13 +30,17 @@
     "bedrockBaseURL": "",
     "responseLanguage": "English",
     "enableCodebaseAnalysis": true,
+    "enableProxy": false,
+    "anonymousTelemetry": true,
     "defaultTag": "master",
     "azureOpenaiBaseURL": "",
     "userId": "42"
   },
-  "claudeCode": {
-    "customSystemPrompt": "",
-    "appendSystemPrompt": "",
-    "permissionMode": ""
+  "claudeCode": {},
+  "codexCli": {},
+  "grokCli": {
+    "timeout": 120000,
+    "workingDirectory": null,
+    "defaultModel": "grok-4-latest"
   }
 }
