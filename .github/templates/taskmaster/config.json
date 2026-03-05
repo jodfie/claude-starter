@@ -31,7 +31,7 @@
     "responseLanguage": "English",
     "enableCodebaseAnalysis": true,
     "enableProxy": false,
-    "anonymousTelemetry": true,
+    "anonymousTelemetry": false,
     "defaultTag": "master",
     "azureOpenaiBaseURL": "",
     "userId": "42"
