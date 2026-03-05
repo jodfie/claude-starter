@@ -132,6 +132,19 @@ jobs:
           cp -r .github/templates/taskmaster ./.taskmaster
           cp .github/templates/bootstrap.sh .
 
+          # Record starter version manifest
+          STARTER_VERSION=$(cat VERSION 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+          BOOTSTRAP_DATE=$(date -u +"%Y-%m-%d")
+          cat > .claude/starter-manifest.json <<MANIFEST
+{
+  "starter_repo": "jodfie/claude-starter",
+  "version": "$STARTER_VERSION",
+  "commit": "${GITHUB_SHA}",
+  "bootstrapped_at": "$BOOTSTRAP_DATE",
+  "bootstrapped_by": "github-actions"
+}
+MANIFEST
+
           # Complete cleanup - remove everything except preserved files/directories
           # Preserve: .git/, .gitignore, .serena/, .taskmaster/, .claude/, docs/
           find . -mindepth 1 -maxdepth 1 \

@@ -156,6 +156,44 @@ phase run --host https://secrets.redleif.dev -- <your-start-command>
 - **Integration guide**: `docs/phase-integration.md`
 - **Official docs**: https://docs.phase.dev/cli/commands
 
+## Template Versioning & Keeping Projects Up to Date
+
+This starter uses semantic versioning. Every project bootstrapped from the template records
+which version it was created from in two files:
+
+- **`.claude/STARTER_VERSION`** — e.g., `1.2.0`
+- **`.claude/starter-manifest.json`** — version, commit SHA, bootstrap date, method
+
+### Checking a project's version
+
+```bash
+cat .claude/STARTER_VERSION
+cat .claude/starter-manifest.json
+```
+
+### Finding all downstream projects and updating them
+
+```bash
+# Check current starter version
+gh api repos/jodfie/claude-starter/contents/VERSION --jq '.content' | base64 -d
+
+# Check a project's recorded version
+gh api repos/jodfie/<REPO>/contents/.claude/STARTER_VERSION --jq '.content' | base64 -d
+
+# Read what changed (CHANGELOG.md lists exact files per version)
+gh api repos/jodfie/claude-starter/contents/CHANGELOG.md --jq '.content' | base64 -d
+```
+
+For the complete update workflow (finding all projects, applying file changes, bumping manifests),
+see **`docs/updating-projects.md`**.
+
+### When you make changes to this starter
+
+1. Update `VERSION` with the new semver
+2. Add a `CHANGELOG.md` entry documenting **exactly which files changed** (required for Claude to update downstream projects correctly)
+3. Update `.github/templates/claude/STARTER_VERSION` to match `VERSION`
+4. Commit and push
+
 ## Getting Started Workflow
 
 1. **Create from template**: Use GitHub's "Use this template" button

@@ -320,6 +320,21 @@ execute_cleanup() {
     cp .github/templates/bootstrap.sh .
   fi
 
+  log_step "Recording starter version manifest..."
+  local starter_version starter_commit bootstrap_date
+  starter_version=$(cat VERSION 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+  starter_commit=$(git rev-parse HEAD 2>/dev/null || echo "unknown")
+  bootstrap_date=$(date -u +"%Y-%m-%d")
+  cat > .claude/starter-manifest.json <<MANIFEST
+{
+  "starter_repo": "jodfie/claude-starter",
+  "version": "$starter_version",
+  "commit": "$starter_commit",
+  "bootstrapped_at": "$bootstrap_date",
+  "bootstrapped_by": "template-cleanup"
+}
+MANIFEST
+
   log_step "Cleaning up template-specific files..."
   find . -mindepth 1 -maxdepth 1 \
     ! -name '.git' \
