@@ -135,15 +135,7 @@ jobs:
           # Record starter version manifest
           STARTER_VERSION=$(cat VERSION 2>/dev/null | tr -d '[:space:]' || echo "unknown")
           BOOTSTRAP_DATE=$(date -u +"%Y-%m-%d")
-          cat > .claude/starter-manifest.json <<MANIFEST
-{
-  "starter_repo": "jodfie/claude-starter",
-  "version": "$STARTER_VERSION",
-  "commit": "${GITHUB_SHA}",
-  "bootstrapped_at": "$BOOTSTRAP_DATE",
-  "bootstrapped_by": "github-actions"
-}
-MANIFEST
+          printf '{\n  "starter_repo": "jodfie/claude-starter",\n  "version": "%s",\n  "commit": "%s",\n  "bootstrapped_at": "%s",\n  "bootstrapped_by": "github-actions"\n}\n' "$STARTER_VERSION" "${GITHUB_SHA}" "$BOOTSTRAP_DATE" > .claude/starter-manifest.json
 
           # Complete cleanup - remove everything except preserved files/directories
           # Preserve: .git/, .gitignore, .serena/, .taskmaster/, .claude/, docs/
