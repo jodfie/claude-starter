@@ -295,7 +295,7 @@ The repository includes a GitHub workflow that customizes the template:
 - Generated reports (consensus, reviews) are denied from Read tool to prevent context bloat
 
 ### Git Integration
-- Repository is a Git repo (branch: master)
+- Repository is a Git repo (branch: main)
 - Serena respects `.gitignore` by default
 - Task Master can track progress alongside commits
 - Use conventional commits with task IDs: `feat: implement JWT auth (task 1.2)`
